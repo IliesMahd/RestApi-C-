@@ -1,4 +1,5 @@
-﻿namespace RestApi.Models;
+﻿
+namespace RestApi.Entities;
 
 public class Bank
 {

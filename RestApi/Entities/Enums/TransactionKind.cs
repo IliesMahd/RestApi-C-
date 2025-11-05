@@ -1,4 +1,4 @@
-namespace RestApi.Models.Enums;
+namespace RestApi.Entities.Enums;
 public enum TransactionKind
 {
     Deposit,
