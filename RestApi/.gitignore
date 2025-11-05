@@ -1,0 +1,15 @@
+﻿bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+
+.idea/
+
+# Secrets et config sensibles
+appsettings.Development.json
+appsettings.Production.json
+*.secrets.json
+.env
+
+*.log
+logs/
