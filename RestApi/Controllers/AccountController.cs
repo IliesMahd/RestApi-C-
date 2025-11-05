@@ -20,7 +20,7 @@ public class AccountController : ControllerBase
     public async Task<IActionResult> CreateAccount([FromBody] CreateAccountDto dto)
     {
         var account = await _accountService.CreateAccount(dto);
-        return Created("", new
+        return Created("/accounts", new
         {
             message = "Compte créé avec succès",
             data = account
