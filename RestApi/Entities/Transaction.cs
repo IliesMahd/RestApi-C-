@@ -1,6 +1,7 @@
-﻿using RestApi.Models.Enums;
+﻿
+using RestApi.Entities.Enums;
 
-namespace RestApi.Models;
+namespace RestApi.Entities;
 
 public class Transaction
 {

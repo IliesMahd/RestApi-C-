@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using RestApi.Entities;
+using RestApi.Models.dto;
 using RestApi.Services;
 
 namespace RestApi.Controllers;
@@ -14,10 +16,14 @@ public class AccountController : ControllerBase
         _accountService = accountService;
     }
     
-    [HttpGet]
-    public async Task<IActionResult> CreateAccount()
+    [HttpPost]
+    public async Task<IActionResult> CreateAccount([FromBody] CreateAccountDto dto)
     {
-        await _accountService.CreateAccount();
-        return Ok("Account created");
+        var account = await _accountService.CreateAccount(dto);
+        return Created("/accounts", new
+        {
+            message = "Compte créé avec succès",
+            data = account
+        });
     }
 }

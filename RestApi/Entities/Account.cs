@@ -1,4 +1,6 @@
-﻿namespace RestApi.Models;
+﻿using RestApi.Models;
+
+namespace RestApi.Entities;
 
 public class Account
 {
