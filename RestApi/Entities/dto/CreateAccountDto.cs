@@ -1,7 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace RestApi.Models.dto;
-
+namespace RestApi.Entities.dto;
 public class CreateAccountDto
 {
     [Required(ErrorMessage = "L'IBAN est obligatoire.")]

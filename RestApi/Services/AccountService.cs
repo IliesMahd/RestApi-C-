@@ -1,5 +1,5 @@
 ﻿using RestApi.Entities;
-using RestApi.Models.dto;
+using RestApi.Entities.dto;
 
 namespace RestApi.Services;
 
@@ -11,11 +11,6 @@ public interface IAccountService
 public class AccountService: IAccountService
 {
     private static int _nextId = 1;
-
-    public AccountService()
-    {
-
-    }
 
     public Task<Account> CreateAccount(CreateAccountDto dto)
     {

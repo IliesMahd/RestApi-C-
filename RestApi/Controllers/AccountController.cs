@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using RestApi.Entities;
-using RestApi.Models.dto;
+using RestApi.Entities.dto;
 using RestApi.Services;
 
 namespace RestApi.Controllers;
