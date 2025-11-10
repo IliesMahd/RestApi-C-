@@ -27,11 +27,9 @@ public class AuthController : ControllerBase
         {
             var (accessToken, refreshToken, user) = await _authService.LoginAsync(loginDto);
 
-            // Configurer le cookie pour l'access token
-            SetAccessTokenCookie(accessToken);
-
-            // Configurer le cookie pour le refresh token
-            SetRefreshTokenCookie(refreshToken);
+            // Configurer les cookies
+            SetTokenCookie("AccessToken", accessToken, 30);
+            SetTokenCookie("RefreshToken", refreshToken, 7 * 24 * 60); // 7 jours
 
             var response = new LoginResponseDto
             {
@@ -66,8 +64,8 @@ public class AuthController : ControllerBase
             var (accessToken, newRefreshToken) = await _authService.RefreshTokenAsync(refreshToken);
 
             // Mettre à jour les cookies
-            SetAccessTokenCookie(accessToken);
-            SetRefreshTokenCookie(newRefreshToken);
+            SetTokenCookie("AccessToken", accessToken, 30);
+            SetTokenCookie("RefreshToken", newRefreshToken, 7 * 24 * 60); // 7 jours
 
             return Ok(new { message = "Tokens rafraîchis avec succès" });
         }
@@ -103,29 +101,16 @@ public class AuthController : ControllerBase
         }
     }
 
-    private void SetAccessTokenCookie(string accessToken)
+    private void SetTokenCookie(string cookieName, string tokenValue, int expirationMinutes)
     {
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
             Secure = true, // HTTPS uniquement
             SameSite = SameSiteMode.Strict,
-            Expires = DateTimeOffset.UtcNow.AddMinutes(30) // Même durée que le JWT
+            Expires = DateTimeOffset.UtcNow.AddMinutes(expirationMinutes)
         };
 
-        Response.Cookies.Append("AccessToken", accessToken, cookieOptions);
-    }
-
-    private void SetRefreshTokenCookie(string refreshToken)
-    {
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true, // HTTPS uniquement
-            SameSite = SameSiteMode.Strict,
-            Expires = DateTimeOffset.UtcNow.AddDays(7) // 7 jours
-        };
-
-        Response.Cookies.Append("RefreshToken", refreshToken, cookieOptions);
+        Response.Cookies.Append(cookieName, tokenValue, cookieOptions);
     }
 }
