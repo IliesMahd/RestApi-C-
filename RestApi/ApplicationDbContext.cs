@@ -13,6 +13,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Account> Accounts { get; set; }
     public DbSet<Bank> Banks { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -80,6 +81,25 @@ public class ApplicationDbContext : DbContext
             entity.HasOne<Account>()
                 .WithMany()
                 .HasForeignKey(t => t.AccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration de l'entité RefreshToken
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.HasKey(rt => rt.Id);
+            entity.Property(rt => rt.Token).IsRequired().HasMaxLength(500);
+            entity.Property(rt => rt.ExpiresAt).IsRequired();
+            entity.Property(rt => rt.CreatedAt).IsRequired();
+            entity.Property(rt => rt.IsRevoked).IsRequired();
+
+            // Index unique sur Token
+            entity.HasIndex(rt => rt.Token).IsUnique();
+
+            // Relation RefreshToken -> User (Many-to-One)
+            entity.HasOne(rt => rt.User)
+                .WithMany()
+                .HasForeignKey(rt => rt.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
