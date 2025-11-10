@@ -22,6 +22,13 @@ public class UserService: IUserService
 
     public async Task<User> CreateUserAsync(CreateUserDto userDto)
     {
+        // Vérifier si l'email existe déjà
+        var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == userDto.Email);
+        if (existingUser != null)
+        {
+            throw new Exception("Un utilisateur avec cet email existe déjà.");
+        }
+
         // Validation de la date de naissance (ne peut pas être dans le futur)
         if (userDto.BirthDate > DateTime.Now)
         {
@@ -37,9 +44,14 @@ public class UserService: IUserService
             throw new Exception("L'utilisateur doit avoir au moins 18 ans.");
         }
 
+        // Hasher le mot de passe
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
+
         // Créer l'utilisateur
         var user = new User
         {
+            Email = userDto.Email,
+            PasswordHash = passwordHash,
             FirstName = userDto.FirstName,
             LastName = userDto.LastName,
             BirthDate = userDto.BirthDate

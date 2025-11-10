@@ -18,6 +18,13 @@ public class UserController: ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserDto userDto)
     {
+        // FluentValidation valide automatiquement le DTO
+        // Si la validation échoue, ModelState contient les erreurs
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         try
         {
             var user = await _userService.CreateUserAsync(userDto);

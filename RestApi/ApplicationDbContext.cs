@@ -24,7 +24,12 @@ public class ApplicationDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(500);
             entity.Property(e => e.BirthDate).IsRequired();
+
+            // Index unique sur Email
+            entity.HasIndex(e => e.Email).IsUnique();
 
             // Relation User -> Accounts (One-to-Many)
             entity.HasMany(u => u.Accounts)
