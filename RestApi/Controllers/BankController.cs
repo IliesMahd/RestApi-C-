@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RestApi.Entities;
 using RestApi.Entities.dto;
 using RestApi.Services;
 
@@ -6,6 +8,7 @@ namespace RestApi.Controllers;
 
 [ApiController]
 [Route("banks")]
+[Authorize(Roles = Roles.Admin)]
 public class BankController : ControllerBase
 {
     private readonly IBankService _bankService;

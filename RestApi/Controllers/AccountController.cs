@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using RestApi.Entities;
 using RestApi.Entities.dto;
 using RestApi.Services;
 
@@ -9,13 +11,16 @@ namespace RestApi.Controllers;
 public class AccountController : ControllerBase
 {
     private readonly IAccountService _accountService;
-    
-    public AccountController(IAccountService accountService)
+    private readonly ApplicationDbContext _context;
+
+    public AccountController(IAccountService accountService, ApplicationDbContext context)
     {
         _accountService = accountService;
+        _context = context;
     }
-    
+
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> CreateAccount([FromBody] CreateAccountDto accountDto)
     {
         try
@@ -30,6 +35,7 @@ public class AccountController : ControllerBase
     }
     
     [HttpGet("{id}")]
+    [Authorize]
     public async Task<IActionResult> GetAccount(int id)
     {
         var account = await _accountService.GetAccountByIdAsync(id);
@@ -37,10 +43,22 @@ public class AccountController : ControllerBase
         {
             return NotFound();
         }
+
+        // Vérifier si l'utilisateur est le propriétaire du compte ou admin
+        var currentUserId = AuthorizationHelper.GetCurrentUserId(User);
+        var isOwner = await AuthorizationHelper.IsAccountOwner(currentUserId, id, _context);
+        var isAdmin = AuthorizationHelper.IsAdmin(User);
+
+        if (!isOwner && !isAdmin)
+        {
+            return Forbid();
+        }
+
         return Ok(account);
     }
 
     [HttpGet]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> GetAllAccounts()
     {
         var accounts = await _accountService.GetAllAccountsAsync();

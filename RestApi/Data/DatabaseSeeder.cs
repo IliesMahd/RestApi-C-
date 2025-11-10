@@ -7,7 +7,7 @@ namespace RestApi.Data;
 
 public static class DatabaseSeeder
 {
-    public static async Task SeedAsync(ApplicationDbContext context, UserManager<User> userManager)
+    public static async Task SeedAsync(ApplicationDbContext context, UserManager<User> userManager, RoleManager<IdentityRole<int>> roleManager)
     {
         // Vérifier si la base de données contient déjà des données
         if (await context.Users.AnyAsync())
@@ -18,7 +18,20 @@ public static class DatabaseSeeder
 
         Console.WriteLine("Début du seeding de la base de données...");
 
-        // 1. Seeder les banques
+        // 1. Créer les rôles
+        if (!await roleManager.RoleExistsAsync(Roles.User))
+        {
+            await roleManager.CreateAsync(new IdentityRole<int>(Roles.User));
+        }
+
+        if (!await roleManager.RoleExistsAsync(Roles.Admin))
+        {
+            await roleManager.CreateAsync(new IdentityRole<int>(Roles.Admin));
+        }
+
+        Console.WriteLine("✓ Rôles créés");
+
+        // 2. Seeder les banques
         var banks = new List<Bank>
         {
             new Bank { Name = "BNP Paribas" },
@@ -31,12 +44,12 @@ public static class DatabaseSeeder
         await context.SaveChangesAsync();
         Console.WriteLine("✓ 4 banques créées");
 
-        // 2. Seeder les utilisateurs avec UserManager
+        // 3. Seeder les utilisateurs avec UserManager et assigner les rôles
         var usersData = new[]
         {
-            new { FirstName = "Alice", LastName = "Martin", Email = "alice@example.com", BirthDate = new DateTime(1990, 5, 15) },
-            new { FirstName = "Bob", LastName = "Dupont", Email = "bob@example.com", BirthDate = new DateTime(1985, 8, 22) },
-            new { FirstName = "Charlie", LastName = "Bernard", Email = "charlie@example.com", BirthDate = new DateTime(1995, 3, 10) }
+            new { FirstName = "Alice", LastName = "Martin", Email = "alice@example.com", BirthDate = new DateTime(1990, 5, 15), Role = Roles.Admin },
+            new { FirstName = "Bob", LastName = "Dupont", Email = "bob@example.com", BirthDate = new DateTime(1985, 8, 22), Role = Roles.User },
+            new { FirstName = "Charlie", LastName = "Bernard", Email = "charlie@example.com", BirthDate = new DateTime(1995, 3, 10), Role = Roles.User }
         };
 
         var users = new List<User>();
@@ -57,6 +70,8 @@ public static class DatabaseSeeder
 
             if (result.Succeeded)
             {
+                // Assigner le rôle à l'utilisateur
+                await userManager.AddToRoleAsync(user, userData.Role);
                 users.Add(user);
             }
             else
@@ -65,9 +80,9 @@ public static class DatabaseSeeder
             }
         }
 
-        Console.WriteLine($"✓ {users.Count} utilisateurs créés");
+        Console.WriteLine($"✓ {users.Count} utilisateurs créés avec rôles assignés");
 
-        // 3. Seeder les comptes bancaires
+        // 4. Seeder les comptes bancaires
         var random = new Random();
         var accounts = new List<Account>();
 
@@ -93,7 +108,7 @@ public static class DatabaseSeeder
         await context.SaveChangesAsync();
         Console.WriteLine($"✓ {accounts.Count} comptes bancaires créés");
 
-        // 4. Seeder les transactions
+        // 5. Seeder les transactions
         var transactions = new List<Transaction>();
         var transactionKinds = new[] { TransactionKind.Deposit, TransactionKind.Withdraw };
 

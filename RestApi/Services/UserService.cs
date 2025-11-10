@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using RestApi.Entities;
 using RestApi.Entities.dto;
+using RestApi.Entities.Enums;
 
 namespace RestApi.Services;
 
@@ -61,6 +62,18 @@ public class UserService: IUserService
             // Récupérer les erreurs
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
             throw new Exception(errors);
+        }
+
+        // Assigner le rôle à l'utilisateur (défaut = User)
+        var role = userDto.Role ?? UserRole.User;
+        var roleResult = await _userManager.AddToRoleAsync(user, Roles.ToString(role));
+
+        if (!roleResult.Succeeded)
+        {
+            // Si l'assignation du rôle échoue, supprimer l'utilisateur et lancer une exception
+            await _userManager.DeleteAsync(user);
+            var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+            throw new Exception($"Erreur lors de l'assignation du rôle : {errors}");
         }
 
         return user;

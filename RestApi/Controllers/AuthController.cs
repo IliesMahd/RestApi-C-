@@ -37,7 +37,7 @@ public class AuthController : ControllerBase
                 UserId = user.Id,
                 Email = user.Email,
                 FirstName = user.FirstName,
-                LastName = user.LastName
+                LastName = user.LastName,
             };
 
             return Ok(response);

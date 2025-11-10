@@ -58,7 +58,7 @@ public class AuthService : IAuthService
         }
 
         // Générer les tokens
-        var accessToken = _tokenService.GenerateAccessToken(user);
+        var accessToken = await _tokenService.GenerateAccessTokenAsync(user);
         var refreshToken = _tokenService.GenerateRefreshToken();
 
         // Sauvegarder le refresh token en base de données
@@ -98,7 +98,7 @@ public class AuthService : IAuthService
         storedToken.IsRevoked = true;
 
         // Générer de nouveaux tokens
-        var accessToken = _tokenService.GenerateAccessToken(storedToken.User);
+        var accessToken = await _tokenService.GenerateAccessTokenAsync(storedToken.User);
         var newRefreshToken = _tokenService.GenerateRefreshToken();
 
         // Créer un nouveau refresh token

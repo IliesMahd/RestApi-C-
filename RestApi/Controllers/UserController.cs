@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using RestApi.Entities;
 using RestApi.Entities.dto;
 using RestApi.Services;
 
@@ -16,6 +18,7 @@ public class UserController: ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserDto userDto)
     {
         // FluentValidation valide automatiquement le DTO
@@ -37,8 +40,18 @@ public class UserController: ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize]
     public async Task<IActionResult> GetUser(int id)
     {
+        // Vérifier si l'utilisateur est admin OU si il demande son propre profil
+        var currentUserId = AuthorizationHelper.GetCurrentUserId(User);
+        var isAdmin = AuthorizationHelper.IsAdmin(User);
+
+        if (!isAdmin && currentUserId != id)
+        {
+            return Forbid(); // 403 Forbidden
+        }
+
         var user = await _userService.GetUserByIdAsync(id);
         if (user == null)
         {
@@ -48,6 +61,7 @@ public class UserController: ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> GetAllUsers()
     {
         var users = await _userService.GetAllUsersAsync();

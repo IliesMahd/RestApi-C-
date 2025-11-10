@@ -107,7 +107,8 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
         var userManager = services.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<RestApi.Entities.User>>();
-        await DatabaseSeeder.SeedAsync(context, userManager);
+        var roleManager = services.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<Microsoft.AspNetCore.Identity.IdentityRole<int>>>();
+        await DatabaseSeeder.SeedAsync(context, userManager, roleManager);
     }
     catch (Exception ex)
     {
