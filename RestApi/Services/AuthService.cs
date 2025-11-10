@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RestApi.Entities;
 using RestApi.Entities.dto;
@@ -17,26 +18,42 @@ public class AuthService : IAuthService
     private readonly ApplicationDbContext _context;
     private readonly ITokenService _tokenService;
     private readonly IConfiguration _configuration;
+    private readonly UserManager<User> _userManager;
+    private readonly SignInManager<User> _signInManager;
 
-    public AuthService(ApplicationDbContext context, ITokenService tokenService, IConfiguration configuration)
+    public AuthService(
+        ApplicationDbContext context,
+        ITokenService tokenService,
+        IConfiguration configuration,
+        UserManager<User> userManager,
+        SignInManager<User> signInManager)
     {
         _context = context;
         _tokenService = tokenService;
         _configuration = configuration;
+        _userManager = userManager;
+        _signInManager = signInManager;
     }
 
     public async Task<(string accessToken, string refreshToken, User user)> LoginAsync(LoginDto loginDto)
     {
         // Vérifier si l'utilisateur existe
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == loginDto.Email);
+        var user = await _userManager.FindByEmailAsync(loginDto.Email);
         if (user == null)
         {
             throw new Exception("Email ou mot de passe incorrect.");
         }
 
-        // Vérifier le mot de passe
-        if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
+        // Vérifier le mot de passe avec SignInManager
+        // lockoutOnFailure: true active le verrouillage après plusieurs tentatives échouées
+        var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, lockoutOnFailure: true);
+
+        if (!result.Succeeded)
         {
+            if (result.IsLockedOut)
+            {
+                throw new Exception("Compte verrouillé en raison de tentatives de connexion échouées.");
+            }
             throw new Exception("Email ou mot de passe incorrect.");
         }
 

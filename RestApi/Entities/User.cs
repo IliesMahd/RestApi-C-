@@ -1,22 +1,18 @@
-﻿namespace RestApi.Entities;
+﻿using Microsoft.AspNetCore.Identity;
 
-public class User
+namespace RestApi.Entities;
+
+public class User : IdentityUser<int>
 {
-    public int Id { get; init; }
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    
-    public string Email { get; set; }
-    
-    public string PasswordHash { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
     public DateTime BirthDate { get; set; }
     public List<Account> Accounts { get; set; } = new List<Account>();
-    
+
     public User() { }
-    
-    public User(int id, string firstName, string lastName, DateTime birthDate)
+
+    public User(string firstName, string lastName, DateTime birthDate)
     {
-        Id = id;
         FirstName = firstName;
         LastName = lastName;
         BirthDate = birthDate;

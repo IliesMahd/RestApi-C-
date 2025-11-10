@@ -4,6 +4,7 @@ using System.Text;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RestApi;
@@ -43,6 +44,31 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateUserDtoValidator>();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Configuration d'Identity
+builder.Services.AddIdentity<RestApi.Entities.User, Microsoft.AspNetCore.Identity.IdentityRole<int>>(options =>
+{
+    // Configuration des mots de passe
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 8;
+
+    // Configuration de l'utilisateur
+    options.User.RequireUniqueEmail = true;
+
+    // Configuration du verrouillage (lockout)
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
+
+    // Configuration de la connexion
+    options.SignIn.RequireConfirmedEmail = false; // À activer si vous implémentez la confirmation par email
+    options.SignIn.RequireConfirmedPhoneNumber = false;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
+
 // Enregistrement des services
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IBankService, BankService>();
@@ -80,7 +106,8 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        await DatabaseSeeder.SeedAsync(context);
+        var userManager = services.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<RestApi.Entities.User>>();
+        await DatabaseSeeder.SeedAsync(context, userManager);
     }
     catch (Exception ex)
     {

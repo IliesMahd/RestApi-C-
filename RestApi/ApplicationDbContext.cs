@@ -1,15 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using RestApi.Entities;
 
 namespace RestApi;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, int>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {
     }
 
-    public DbSet<User> Users { get; set; }
     public DbSet<Account> Accounts { get; set; }
     public DbSet<Bank> Banks { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
@@ -19,18 +20,13 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Configuration de l'entity User
+        // Configuration de l'entity User (propriétés personnalisées)
+        // Les propriétés de base (Id, Email, PasswordHash, etc.) sont gérées par IdentityDbContext
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id);
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
-            entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(500);
             entity.Property(e => e.BirthDate).IsRequired();
-
-            // Index unique sur Email
-            entity.HasIndex(e => e.Email).IsUnique();
 
             // Relation User -> Accounts (One-to-Many)
             entity.HasMany(u => u.Accounts)

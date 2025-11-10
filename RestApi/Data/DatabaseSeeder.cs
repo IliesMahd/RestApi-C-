@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RestApi.Entities;
 using RestApi.Entities.Enums;
@@ -6,7 +7,7 @@ namespace RestApi.Data;
 
 public static class DatabaseSeeder
 {
-    public static async Task SeedAsync(ApplicationDbContext context)
+    public static async Task SeedAsync(ApplicationDbContext context, UserManager<User> userManager)
     {
         // Vérifier si la base de données contient déjà des données
         if (await context.Users.AnyAsync())
@@ -30,38 +31,41 @@ public static class DatabaseSeeder
         await context.SaveChangesAsync();
         Console.WriteLine("✓ 4 banques créées");
 
-        // 2. Seeder les utilisateurs
-        var users = new List<User>
+        // 2. Seeder les utilisateurs avec UserManager
+        var usersData = new[]
         {
-            new User
-            {
-                FirstName = "Alice",
-                LastName = "Martin",
-                Email = "alice@example.com",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"),
-                BirthDate = new DateTime(1990, 5, 15)
-            },
-            new User
-            {
-                FirstName = "Bob",
-                LastName = "Dupont",
-                Email = "bob@example.com",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"),
-                BirthDate = new DateTime(1985, 8, 22)
-            },
-            new User
-            {
-                FirstName = "Charlie",
-                LastName = "Bernard",
-                Email = "charlie@example.com",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"),
-                BirthDate = new DateTime(1995, 3, 10)
-            }
+            new { FirstName = "Alice", LastName = "Martin", Email = "alice@example.com", BirthDate = new DateTime(1990, 5, 15) },
+            new { FirstName = "Bob", LastName = "Dupont", Email = "bob@example.com", BirthDate = new DateTime(1985, 8, 22) },
+            new { FirstName = "Charlie", LastName = "Bernard", Email = "charlie@example.com", BirthDate = new DateTime(1995, 3, 10) }
         };
 
-        await context.Users.AddRangeAsync(users);
-        await context.SaveChangesAsync();
-        Console.WriteLine("✓ 3 utilisateurs créés");
+        var users = new List<User>();
+        foreach (var userData in usersData)
+        {
+            var user = new User
+            {
+                UserName = userData.Email,
+                Email = userData.Email,
+                FirstName = userData.FirstName,
+                LastName = userData.LastName,
+                BirthDate = userData.BirthDate,
+                EmailConfirmed = true // Confirmer l'email pour le seeding
+            };
+
+            // UserManager gère le hashing du mot de passe automatiquement
+            var result = await userManager.CreateAsync(user, "Password123!");
+
+            if (result.Succeeded)
+            {
+                users.Add(user);
+            }
+            else
+            {
+                Console.WriteLine($"Erreur lors de la création de l'utilisateur {user.Email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            }
+        }
+
+        Console.WriteLine($"✓ {users.Count} utilisateurs créés");
 
         // 3. Seeder les comptes bancaires
         var random = new Random();

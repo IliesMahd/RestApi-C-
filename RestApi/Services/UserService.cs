@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using RestApi.Entities;
 using RestApi.Entities.dto;
 
@@ -13,22 +14,17 @@ public interface IUserService
 
 public class UserService: IUserService
 {
+    private readonly UserManager<User> _userManager;
     private readonly ApplicationDbContext _context;
 
-    public UserService(ApplicationDbContext context)
+    public UserService(UserManager<User> userManager, ApplicationDbContext context)
     {
+        _userManager = userManager;
         _context = context;
     }
 
     public async Task<User> CreateUserAsync(CreateUserDto userDto)
     {
-        // Vérifier si l'email existe déjà
-        var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == userDto.Email);
-        if (existingUser != null)
-        {
-            throw new Exception("Un utilisateur avec cet email existe déjà.");
-        }
-
         // Validation de la date de naissance (ne peut pas être dans le futur)
         if (userDto.BirthDate > DateTime.Now)
         {
@@ -44,21 +40,28 @@ public class UserService: IUserService
             throw new Exception("L'utilisateur doit avoir au moins 18 ans.");
         }
 
-        // Hasher le mot de passe
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
-
         // Créer l'utilisateur
         var user = new User
         {
+            UserName = userDto.Email, // Identity requiert un UserName
             Email = userDto.Email,
-            PasswordHash = passwordHash,
             FirstName = userDto.FirstName,
             LastName = userDto.LastName,
             BirthDate = userDto.BirthDate
         };
 
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+        // UserManager gère automatiquement :
+        // - La vérification de l'unicité de l'email
+        // - Le hashage du mot de passe
+        // - La validation des règles de mot de passe
+        var result = await _userManager.CreateAsync(user, userDto.Password);
+
+        if (!result.Succeeded)
+        {
+            // Récupérer les erreurs
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new Exception(errors);
+        }
 
         return user;
     }
