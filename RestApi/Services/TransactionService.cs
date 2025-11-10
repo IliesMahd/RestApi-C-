@@ -1,57 +1,76 @@
 ﻿using RestApi.Entities;
 using RestApi.Entities.dto;
+using RestApi.Entities.Enums;
 
 namespace RestApi.Services;
 
 public interface ITransactionService
 {
-    Task<object> Deposit(TransactionDto dto);
-    Task<object> Withdraw(TransactionDto dto);
+    Task<Transaction> DepositAsync(TransactionDto dto);
+    Task<Transaction> WithdrawAsync(TransactionDto dto);
+    
+    
 }
 
 public class TransactionService: ITransactionService
 {
-    // Compte persistant en mémoire
-    private static Account _mockAccount;
+    private readonly ApplicationDbContext _context;
 
-    public TransactionService()
+    public TransactionService(ApplicationDbContext context)
     {
-        // Créer le compte une seule fois au démarrage
-        if (_mockAccount == null)
+        _context = context;
+    }
+
+    public async Task<Transaction> DepositAsync(TransactionDto dto)
+    {
+        var account = await _context.Accounts.FindAsync(dto.AccountId);
+        if (account == null)
         {
-            var mockUser = new User(1, "John", "Doe", new DateTime(1990, 1, 1));
-            var mockBank = new Bank(1, "Test Bank");
-            _mockAccount = new Account(
-                id: 1,
-                bank: mockBank,
-                owner: mockUser,
-                iban: "FR7630006000011234567890189",
-                balance: 1000m
-            );
+            throw new Exception($"Account with ID {dto.AccountId} not found");
         }
+
+        account.Balance += dto.Amount;
+
+        var transaction = new Transaction
+        {
+            AccountId = dto.AccountId,
+            At = DateTime.UtcNow,
+            Kind = TransactionKind.Deposit,
+            Amount = dto.Amount
+        };
+
+        _context.Transactions.Add(transaction);
+        await _context.SaveChangesAsync();
+
+        return transaction;
     }
 
-    public Task<object> Deposit(TransactionDto dto)
+    public async Task<Transaction> WithdrawAsync(TransactionDto dto)
     {
-        // Modifier le solde du compte
-        _mockAccount.Balance += dto.Amount;
-
-        return Task.FromResult<object>(new
+        var account = await _context.Accounts.FindAsync(dto.AccountId);
+        if (account == null)
         {
-            message = $"Dépôt de {dto.Amount}€ effectué avec succès",
-            newBalance = _mockAccount.Balance
-        });
-    }
+            throw new Exception($"Account with ID {dto.AccountId} not found");
+        }
 
-    public Task<object> Withdraw(TransactionDto dto)
-    {
-        // Modifier le solde du compte
-        _mockAccount.Balance -= dto.Amount;
-
-        return Task.FromResult<object>(new
+        if (account.Balance < dto.Amount)
         {
-            message = $"Retrait de {dto.Amount}€ effectué avec succès",
-            newBalance = _mockAccount.Balance
-        });
+            throw new Exception("Insufficient balance");
+        }
+
+        account.Balance -= dto.Amount;
+
+        var transaction = new Transaction
+        {
+            AccountId = dto.AccountId,
+            At = DateTime.UtcNow,
+            Kind = TransactionKind.Withdraw,
+            Amount = dto.Amount
+        };
+
+        _context.Transactions.Add(transaction);
+        await _context.SaveChangesAsync();
+
+        return transaction;
     }
 }

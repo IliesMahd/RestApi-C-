@@ -19,6 +19,6 @@ public class Account
         IBAN = iban;
         Balance = balance;
         
-        // TODO : Établir les relations bidirectionnelles pour ajouter le compte à la banque et à l'utilisateur
+        // TODO : etablir les relations bidirectionnelles pour ajouter le compte à la banque et à l'utilisateur
     }
 }

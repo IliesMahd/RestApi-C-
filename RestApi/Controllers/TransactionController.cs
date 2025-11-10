@@ -18,14 +18,28 @@ public class TransactionController: ControllerBase
     [HttpPost("deposit")]
     public async Task<IActionResult> Deposit([FromBody] TransactionDto dto)
     {
-        var result = await _transactionService.Deposit(dto);
-        return Ok(result);
+        try
+        {
+            var result = await _transactionService.DepositAsync(dto);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPost("withdraw")]
     public async Task<IActionResult> Withdraw([FromBody] TransactionDto dto)
     {
-        var result = await _transactionService.Withdraw(dto);
-        return Ok(result);
+        try
+        {
+            var result = await _transactionService.WithdrawAsync(dto);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 }
