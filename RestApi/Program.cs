@@ -1,8 +1,14 @@
 // CONFIG API UNIQUEMENT
 
+using System.Text;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using RestApi;
 using RestApi.Services;
+using RestApi.Validators;
 
 // Configuration Npgsql pour permettre l'utilisation de DateTime sans conversion UTC
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
@@ -15,6 +21,10 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
+
+// Configuration de FluentValidation
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateUserDtoValidator>();
 
 //Configuration de la BDD PostgreSQL
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -31,7 +41,20 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Authentification
-// builder.Services.AddAuthentication(JwtBearerDefaults)
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["JwtIssuer"],
+            ValidAudience = builder.Configuration["JwtAudience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtKey"]))
+        };
+    });
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.
